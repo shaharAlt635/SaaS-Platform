@@ -171,7 +171,7 @@ Optional: Stripe (`STRIPE_*`, webhook to `/api/webhooks/stripe` for `checkout.se
 
 ### Plans
 
-Defined in [src/domain/plans.ts](src/domain/plans.ts) — prices shown in the UI, limits enforced in use cases.
+Defined in [src/domain/plans.ts](src/domain/plans.ts) — features shown in the UI, limits enforced in use cases. The UI shows packages only; prices are set in Stripe.
 
 | | Free | Pro | Business |
 | --- | --- | --- | --- |

@@ -18,8 +18,6 @@ export interface Plan {
   id: PlanId;
   name: string;
   description: string;
-  /** Display prices in USD; the source of truth for charging is the Stripe price. */
-  price: { monthly: number; yearly: number };
   limits: PlanLimits;
   features: string[];
   trialDays: number;
@@ -33,7 +31,6 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     id: "FREE",
     name: "Free",
     description: "For side projects and early exploration.",
-    price: { monthly: 0, yearly: 0 },
     limits: { members: 3, eventsPerMonth: 10_000, apiKeys: 2 },
     features: ["Up to 3 team members", "10k events / month", "7-day analytics history", "Community support"],
     trialDays: 0,
@@ -43,7 +40,6 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     id: "PRO",
     name: "Pro",
     description: "For growing teams that ship every week.",
-    price: { monthly: 29, yearly: 290 },
     limits: { members: 15, eventsPerMonth: 1_000_000, apiKeys: 10 },
     features: ["Up to 15 team members", "1M events / month", "90-day analytics history", "Audit log", "Email support"],
     trialDays: 14,
@@ -54,7 +50,6 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     id: "BUSINESS",
     name: "Business",
     description: "For organizations with advanced needs.",
-    price: { monthly: 99, yearly: 990 },
     limits: { members: null, eventsPerMonth: 20_000_000, apiKeys: null },
     features: ["Unlimited team members", "20M events / month", "1-year analytics history", "Priority support", "SSO (coming soon)"],
     trialDays: 14,

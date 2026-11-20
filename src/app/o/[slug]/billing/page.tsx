@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, Meter } from "@/components/ui/misc";
 import type { SubscriptionStatus } from "@/domain/billing";
 import { ManageBillingButton } from "@/features/billing/components/manage-billing-button";
-import { PricingTable } from "@/features/billing/components/pricing-table";
+import { PlanCards } from "@/features/billing/components/pricing-table";
 import { container } from "@/infrastructure/container";
 import { formatDate, formatNumber } from "@/lib/utils";
 import { getOrgContext } from "@/server/session";
@@ -122,7 +122,7 @@ export default async function BillingPage({
             </h2>
             {!billing.canManage && <p className="text-sm text-muted-foreground">Only owners can change the plan.</p>}
           </div>
-          <PricingTable
+          <PlanCards
             mode="billing"
             slug={ctx.organization.slug}
             currentPlan={plan.id}

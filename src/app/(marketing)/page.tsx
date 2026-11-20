@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { env } from "@/config/env";
 import { site } from "@/config/site";
 import { DemoButton } from "@/features/auth/components/demo-button";
-import { PricingTable } from "@/features/billing/components/pricing-table";
+import { PlanCards } from "@/features/billing/components/pricing-table";
 import { getSession } from "@/server/session";
 
 const FEATURES = [
@@ -35,7 +35,7 @@ export default async function LandingPage() {
           <Logo />
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
             <a href="#features" className="hover:text-foreground">Features</a>
-            <a href="#pricing" className="hover:text-foreground">Pricing</a>
+            <a href="#plans" className="hover:text-foreground">Plans</a>
           </nav>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -77,7 +77,7 @@ export default async function LandingPage() {
                   <DemoButton size="lg" variant="outline" />
                 ) : (
                   <Button asChild size="lg" variant="outline">
-                    <a href="#pricing">See pricing</a>
+                    <a href="#plans">See plans</a>
                   </Button>
                 )}
               </div>
@@ -106,13 +106,13 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        <section id="pricing" className="scroll-mt-16 border-t">
+        <section id="plans" className="scroll-mt-16 border-t">
           <div className="mx-auto max-w-6xl px-4 py-20">
             <div className="mx-auto mb-10 max-w-2xl text-center">
-              <h2 className="text-3xl font-semibold tracking-tight">Simple, predictable pricing</h2>
+              <h2 className="text-3xl font-semibold tracking-tight">Plans for every stage</h2>
               <p className="mt-3 text-muted-foreground">Start free. Upgrade when your team grows.</p>
             </div>
-            <PricingTable mode="marketing" />
+            <PlanCards mode="marketing" />
           </div>
         </section>
       </main>

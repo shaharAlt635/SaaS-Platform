@@ -74,7 +74,7 @@ Short records of the choices that shape this codebase: the context, what was cho
 
 **Why.** No card data touches our servers (minimal PCI scope); upgrades, downgrades, proration, invoices and dunning come from Stripe. Webhooks can arrive late, twice or out of order — re-fetching and idempotency make that safe. Entitlements are computed (`effectivePlan`) from status, so `PAST_DUE` keeps access during Stripe's retry window and `CANCELED` drops to Free automatically.
 
-**Cost.** Plan prices are defined in code for display and in Stripe for charging; the price-ID env vars connect the two.
+**Cost.** Plans (features and limits) are defined in code, prices only in Stripe; the price-ID env vars connect the two. The UI deliberately shows packages without prices, so changing a price never needs a deploy.
 
 ## 10. Plans and permissions as code
 

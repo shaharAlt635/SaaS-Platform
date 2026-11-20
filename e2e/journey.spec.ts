@@ -1,10 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("visitors see the landing page and pricing", async ({ page }) => {
+test("visitors see the landing page and the plans, without prices", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Understand your product");
-  await expect(page.getByRole("heading", { name: "Simple, predictable pricing" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: /Yearly/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Plans for every stage" })).toBeVisible();
+  for (const plan of ["Free", "Pro", "Business"]) {
+    await expect(page.getByRole("heading", { name: plan, exact: true })).toBeVisible();
+  }
+  await expect(page.getByText(/\$\d/)).toHaveCount(0);
 });
 
 test("protected pages redirect to sign-in and come back afterwards", async ({ page }) => {
