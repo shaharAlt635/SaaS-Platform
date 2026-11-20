@@ -4,7 +4,7 @@
 
 A production-grade SaaS dashboard: authentication, organizations, role-based access control, Stripe subscriptions, a product-analytics ingestion API and an audit log — built with **Next.js 16, TypeScript, PostgreSQL and Prisma** on a clean, tested architecture.
 
-**[Live demo](LIVE_DEMO_URL)** · [Architecture](docs/ARCHITECTURE.md) · [Security model](docs/SECURITY.md) · [Technical decisions](docs/DECISIONS.md)
+**[Live demo](https://saa-s-platform-lac.vercel.app)** · [Architecture](docs/ARCHITECTURE.md) · [Security model](docs/SECURITY.md) · [Technical decisions](docs/DECISIONS.md)
 
 ![Next.js 16](https://img.shields.io/badge/Next.js-16-000?logo=nextdotjs)
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=fff)
@@ -18,7 +18,7 @@ A production-grade SaaS dashboard: authentication, organizations, role-based acc
 
 ## Try it
 
-Open the **[live demo](LIVE_DEMO_URL)** and click **Explore the live demo** — no sign-up needed. You land in a seeded Pro workspace with six months of events. It's read-only and resets nightly; sign up to get your own organization and try every write path.
+Open the **[live demo](https://saa-s-platform-lac.vercel.app)** and click **Explore the live demo** — no sign-up needed. You land in a seeded Pro workspace with six months of events. It's read-only and resets nightly; sign up to get your own organization and try every write path.
 
 To see role-based access from the other side, sign in as a different demo member (password `demo-password-123`):
 
