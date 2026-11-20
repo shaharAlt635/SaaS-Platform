@@ -64,3 +64,9 @@ export interface TrackedEvent {
   properties: Record<string, unknown> | null;
   occurredAt: Date;
 }
+
+/** An event as stored: `occurredAt` is the client's timestamp, `receivedAt` when the API accepted it. */
+export interface StoredEvent extends TrackedEvent {
+  id: string;
+  receivedAt: Date;
+}

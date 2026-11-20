@@ -11,6 +11,7 @@ import type {
   Member,
   Membership,
   Organization,
+  StoredEvent,
   TrackedEvent,
 } from "@/domain/entities";
 import type { DailyPoint, Window } from "@/domain/analytics";
@@ -92,6 +93,13 @@ export interface AnalyticsRepository {
   totals(organizationId: string, window: Window): Promise<{ events: number; users: number }>;
   daily(organizationId: string, window: Window): Promise<DailyPoint[]>;
   topEvents(organizationId: string, window: Window, limit: number): Promise<Array<{ name: string; count: number }>>;
+  /** Most recently received events first, cursor-paginated. */
+  recent(
+    organizationId: string,
+    options: { since: Date; limit: number; cursor?: string; name?: string },
+  ): Promise<{ items: StoredEvent[]; nextCursor: string | null }>;
+  /** Distinct event names received since `since`, alphabetically. */
+  eventNames(organizationId: string, since: Date): Promise<string[]>;
 }
 
 export interface AuditLogRepository {

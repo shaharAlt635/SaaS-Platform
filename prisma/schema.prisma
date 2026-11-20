@@ -235,6 +235,7 @@ model Event {
 
   @@index([organizationId, occurredAt])
   @@index([organizationId, name, occurredAt])
+  @@index([organizationId, createdAt])
   @@map("events")
 }
 

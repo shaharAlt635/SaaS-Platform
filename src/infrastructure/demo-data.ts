@@ -62,6 +62,7 @@ function generateEvents(random: () => number, organizationId: string, days: numb
     const daily = Array.from({ length: Math.max(5, Math.round(count / 6)) }, () => pick(audience));
     for (let i = 0; i < count; i++) {
       const name = eventName();
+      const occurredAt = new Date(dayStart + random() * DAY * elapsed);
       events.push({
         organizationId,
         name,
@@ -72,7 +73,8 @@ function generateEvents(random: () => number, organizationId: string, days: numb
             : name === "purchase"
               ? { amount: Math.round(10 + random() * 190), currency: "USD" }
               : undefined,
-        occurredAt: new Date(dayStart + random() * DAY * elapsed),
+        occurredAt,
+        createdAt: occurredAt, // as if each event had been sent in real time
       });
     }
   }

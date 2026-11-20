@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   Plus,
+  Rows3,
   ScrollText,
   Settings,
   Sparkles,
@@ -53,6 +54,7 @@ interface ShellProps {
 const NAV: Array<{ href: string; label: string; icon: React.ComponentType<{ className?: string }>; permission: Permission }> = [
   { href: "", label: "Overview", icon: LayoutDashboard, permission: "organization:read" },
   { href: "/analytics", label: "Analytics", icon: ChartColumn, permission: "analytics:read" },
+  { href: "/events", label: "Events", icon: Rows3, permission: "analytics:read" },
   { href: "/members", label: "Members", icon: Users, permission: "members:read" },
   { href: "/api-keys", label: "API keys", icon: KeyRound, permission: "api_keys:read" },
   { href: "/billing", label: "Billing", icon: CreditCard, permission: "billing:read" },

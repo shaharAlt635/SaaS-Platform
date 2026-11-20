@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Copy, Monitor, Moon, Sun } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { Check, Copy, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
 import type * as React from "react";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -129,5 +130,54 @@ export function SecretField({ value, label }: { value: string; label: string }) 
       </code>
       <CopyButton value={value} label={`Copy ${label.toLowerCase()}`} />
     </div>
+  );
+}
+
+/** Re-fetches the current page's server data in place — no full reload, scroll and state are kept. */
+export function RefreshButton({ label = "Refresh" }: { label?: string }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  return (
+    <Button variant="outline" size="sm" onClick={() => startTransition(() => router.refresh())} disabled={pending} aria-label={label}>
+      <RefreshCw className={cn(pending && "animate-spin")} />
+      <span className="max-sm:sr-only">{pending ? "Refreshing…" : label}</span>
+    </Button>
+  );
+}
+
+/** Select bound to a URL search parameter; changing it resets pagination. */
+export function SearchParamSelect({
+  param,
+  label,
+  options,
+  allLabel,
+}: {
+  param: string;
+  label: string;
+  options: string[];
+  allLabel: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const value = searchParams.get(param) ?? "";
+  return (
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(event) => {
+        const next = new URLSearchParams();
+        if (event.target.value) next.set(param, event.target.value);
+        router.push(next.size ? `${pathname}?${next}` : pathname);
+      }}
+      className="h-8 max-w-52 rounded-md border border-input bg-card px-2 text-xs shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/30"
+    >
+      <option value="">{allLabel}</option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   );
 }

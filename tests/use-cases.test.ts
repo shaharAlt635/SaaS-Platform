@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ingestEvents } from "@/application/use-cases/analytics";
+import { ingestEvents, listEvents } from "@/application/use-cases/analytics";
 import { authenticateApiKey, createApiKey, revokeApiKey } from "@/application/use-cases/api-keys";
 import { handleBillingWebhook, startCheckout } from "@/application/use-cases/billing";
 import { acceptInvitation, inviteMember } from "@/application/use-cases/invitations";
@@ -200,5 +200,43 @@ describe("billing", () => {
     state.webhookQueue.push({ id: "evt_x", type: "customer.subscription.updated", subscription: providerSub({ organizationId: org.id, priceId: "price_unknown" }) });
     await expect(handleBillingWebhook(deps, "{}", "sig")).rejects.toThrow(/unknown price/);
     expect(state.processedEvents.has("evt_x")).toBe(false);
+  });
+});
+
+describe("event explorer", () => {
+  it("lists events newest first, filters by name and paginates", async () => {
+    const { deps, owner, addOrg, ctxFor } = setup();
+    const org = await addOrg(owner);
+    const ctx = ctxFor(org, owner);
+    const { apiKey } = await createApiKey(deps, ctx, { name: "Backend" });
+    await ingestEvents(deps, apiKey, { events: Array.from({ length: 60 }, (_, i) => ({ name: i % 2 ? "signup" : "page_view", distinctId: `u${i}` })) });
+    await ingestEvents(deps, apiKey, { name: "my_test", distinctId: "me", properties: { plan: "pro" } });
+
+    const first = await listEvents(deps, ctx);
+    expect(first.items).toHaveLength(50);
+    expect(first.items[0]).toMatchObject({ name: "my_test", distinctId: "me", properties: { plan: "pro" } });
+    expect(first.names).toEqual(["my_test", "page_view", "signup"]);
+
+    const second = await listEvents(deps, ctx, { cursor: first.nextCursor });
+    expect(second.items).toHaveLength(11);
+    expect(second.nextCursor).toBeNull();
+    expect(new Set([...first.items, ...second.items].map((e) => e.id)).size).toBe(61);
+
+    const filtered = await listEvents(deps, ctx, { name: "signup" });
+    expect(filtered.items.every((e) => e.name === "signup")).toBe(true);
+    expect(filtered.items).toHaveLength(30);
+  });
+
+  it("only shows events within the plan's history window and ignores junk query params", async () => {
+    const { deps, owner, addOrg, ctxFor, state, now } = setup();
+    const org = await addOrg(owner); // Free plan: 7 days
+    const old = new Date(now.getTime() - 8 * 86_400_000);
+    state.events.push({ id: "old", organizationId: org.id, name: "ancient", distinctId: null, properties: null, occurredAt: old, receivedAt: old });
+
+    const page = await listEvents(deps, ctxFor(org, owner), { name: { $ne: null }, cursor: 42 });
+    expect(page.historyDays).toBe(7);
+    expect(page.items).toHaveLength(0);
+    expect(page.names).toEqual([]);
+    expect(page.name).toBeNull();
   });
 });

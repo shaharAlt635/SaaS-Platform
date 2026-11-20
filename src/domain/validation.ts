@@ -55,6 +55,12 @@ export const checkoutSchema = z.object({
 
 export const analyticsRangeSchema = z.enum(ANALYTICS_RANGES).catch("30d");
 
+/** Query parameters for the event explorer; invalid values fall back to "no filter". */
+export const eventsQuerySchema = z.object({
+  name: z.string().trim().min(1).max(64).optional().catch(undefined),
+  cursor: z.string().min(1).max(64).optional().catch(undefined),
+});
+
 const propertyValue = z.union([z.string().max(1024), z.number(), z.boolean(), z.null()]);
 
 export const trackEventSchema = z.object({

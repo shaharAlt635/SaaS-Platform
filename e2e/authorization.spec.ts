@@ -6,6 +6,7 @@ test.describe("role-based access in the UI", () => {
     await signIn(page, demoUsers.viewer);
     const nav = mainNav(page);
     await expect(nav.getByRole("link", { name: "Analytics" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Events" })).toBeVisible();
     for (const name of ["API keys", "Billing", "Audit log"]) {
       await expect(nav.getByRole("link", { name })).toHaveCount(0);
     }
@@ -44,9 +45,10 @@ test.describe("role-based access in the UI", () => {
   test("owners see every section", async ({ page }) => {
     await signIn(page, demoUsers.owner);
     const nav = mainNav(page);
-    for (const name of ["Overview", "Analytics", "Members", "API keys", "Billing", "Audit log", "Settings"]) {
+    for (const name of ["Overview", "Analytics", "Events", "Members", "API keys", "Billing", "Audit log", "Settings"]) {
       await expect(nav.getByRole("link", { name })).toBeVisible();
     }
+    await expect(page.getByRole("heading", { name: "Organization Recent Activity" })).toBeVisible();
     await page.goto("/o/acme/activity");
     await expect(page.getByRole("heading", { name: "Audit log" })).toBeVisible();
     await expect(page.getByText("invited taylor@acme.test")).toBeVisible();

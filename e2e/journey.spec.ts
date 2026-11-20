@@ -52,7 +52,26 @@ test("a new user signs up, creates an organization, sends events and sees them",
   await expect(page.getByText("Top events")).toBeVisible();
   await expect(page.locator("li", { hasText: "page_view" })).toContainText("2");
 
+  // The event explorer lists individual events; Refresh pulls in new ones without a page reload.
+  await page.goto(`/o/e2e-org-${suffix}/events`);
+  await expect(page.getByRole("row")).toHaveCount(4); // header + 3 events
+  await page.evaluate(() => ((window as unknown as { __marker: boolean }).__marker = true));
+  const late = await request.post("/api/v1/events", {
+    headers: { Authorization: `Bearer ${secret}` },
+    data: { name: "my_test", distinctId: "me", properties: { source: "e2e" } },
+  });
+  expect(late.status()).toBe(202);
+  await page.getByRole("button", { name: "Refresh" }).click();
+  await expect(page.getByRole("row").nth(1)).toContainText("my_test");
+  await expect(page.getByRole("row").nth(1)).toContainText("source: e2e");
+  expect(await page.evaluate(() => (window as unknown as { __marker?: boolean }).__marker)).toBe(true);
+
+  await page.getByLabel("Filter by event name").selectOption("page_view");
+  await expect(page).toHaveURL(/name=page_view/);
+  await expect(page.getByRole("row")).toHaveCount(3);
+
   // Free plan: the audit log is gated, longer analytics ranges are locked.
+  await page.goto(`/o/e2e-org-${suffix}/analytics`);
   await expect(page.getByRole("link", { name: "Last 90 days (requires upgrade)" })).toBeVisible();
   await page.goto(`/o/e2e-org-${suffix}/activity`);
   await expect(page.getByText("Unlock the audit log")).toBeVisible();

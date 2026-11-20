@@ -8,9 +8,9 @@ import {
   rangeWindows,
 } from "@/domain/analytics";
 import { billingPeriod } from "@/domain/billing";
-import type { ApiKey, TrackedEvent } from "@/domain/entities";
+import type { ApiKey, StoredEvent, TrackedEvent } from "@/domain/entities";
 import { assertWithinLimit, HISTORY_DAYS, PLANS } from "@/domain/plans";
-import { analyticsRangeSchema, ingestPayloadSchema, parseInput } from "@/domain/validation";
+import { analyticsRangeSchema, eventsQuerySchema, ingestPayloadSchema, parseInput } from "@/domain/validation";
 import { authorize, type OrgContext } from "../context";
 import type { Dependencies } from "../ports";
 import { getOrganizationPlan } from "./billing";
@@ -83,4 +83,34 @@ export async function ingestEvents(
   }));
   await deps.analytics.ingest(organizationId, tracked, period);
   return { accepted: tracked.length };
+}
+
+const EVENTS_PAGE_SIZE = 50;
+const DAY_MS = 86_400_000;
+
+export interface EventsPage {
+  items: StoredEvent[];
+  nextCursor: string | null;
+  names: string[];
+  name: string | null;
+  historyDays: number;
+}
+
+/** Event explorer: raw events, newest first, within the plan's history window. */
+export async function listEvents(
+  deps: Pick<Dependencies, "analytics" | "subscriptions" | "clock">,
+  ctx: OrgContext,
+  input: { name?: unknown; cursor?: unknown } = {},
+): Promise<EventsPage> {
+  authorize(ctx, "analytics:read");
+  const { name, cursor } = eventsQuerySchema.parse(input);
+  const plan = await getOrganizationPlan(deps, ctx.organization.id);
+  const historyDays = HISTORY_DAYS[plan];
+  const since = new Date(deps.clock().getTime() - historyDays * DAY_MS);
+
+  const [page, names] = await Promise.all([
+    deps.analytics.recent(ctx.organization.id, { since, limit: EVENTS_PAGE_SIZE, cursor, name }),
+    deps.analytics.eventNames(ctx.organization.id, since),
+  ]);
+  return { ...page, names, name: name ?? null, historyDays };
 }

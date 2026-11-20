@@ -10,7 +10,7 @@ A production-grade SaaS dashboard: authentication, organizations, role-based acc
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=fff)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma_7-4169e1?logo=postgresql&logoColor=fff)
 ![Stripe](https://img.shields.io/badge/Billing-Stripe-635bff?logo=stripe&logoColor=fff)
-![Tests](https://img.shields.io/badge/tests-142_passing-2ea44f)
+![Tests](https://img.shields.io/badge/tests-149_passing-2ea44f)
 
 <img src="docs/screenshots/overview.png" alt="Organization overview: KPIs, events per day and recent team activity" width="900">
 
@@ -32,9 +32,9 @@ To see role-based access from the other side, sign in as a different demo member
 ## Highlights
 
 - **Multi-tenancy done properly.** Users belong to many organizations with a different role in each. Every query is tenant-scoped; non-members get a 404, and another tenant's IDs behave as if they don't exist.
-- **One authorization policy, tested exhaustively.** A single permission matrix is enforced inside every use case, and a test runs **every protected operation as every role** (68 cases) and fails if any outcome drifts from the matrix.
+- **One authorization policy, tested exhaustively.** A single permission matrix is enforced inside every use case, and a test runs **every protected operation as every role** (72 cases) and fails if any outcome drifts from the matrix.
 - **Real billing.** Stripe Checkout, Customer Portal and trials; plan limits on seats, events, API keys and history; idempotent, order-tolerant webhooks.
-- **A working product.** `POST /api/v1/events` with hashed API keys, per-key rate limits and monthly quotas, feeding dashboards with period-over-period comparisons.
+- **A working product.** `POST /api/v1/events` with hashed API keys, per-key rate limits and monthly quotas, feeding dashboards with period-over-period comparisons and a live event explorer.
 - **Clean architecture.** Domain → application → infrastructure → presentation, with the dependency rule enforced by ESLint and business logic tested without a database.
 - **Production concerns covered.** Env validation, security headers, audit trail, health check, structured logs, Docker image, migrations in the deploy pipeline.
 
@@ -43,9 +43,9 @@ To see role-based access from the other side, sign in as a different demo member
 | | |
 | :-: | :-: |
 | <img src="docs/screenshots/analytics.png" alt="Analytics with KPIs, daily events and top events" width="440"><br>**Analytics** — 7/30/90-day and 12-month ranges, gated by plan | <img src="docs/screenshots/overview-dark.png" alt="Overview in dark mode" width="440"><br>**Dark mode** — tokens tuned per theme |
-| <img src="docs/screenshots/members.png" alt="Members table with role selectors and pending invitations" width="440"><br>**Members** — roles, invitations, seat limits | <img src="docs/screenshots/billing.png" alt="Billing page with plan, usage meters and plan cards" width="440"><br>**Billing** — plan, usage meters, Stripe Checkout |
-| <img src="docs/screenshots/api-keys.png" alt="API keys page with usage instructions" width="440"><br>**API keys** — hashed, shown once, revocable | <img src="docs/screenshots/audit-log.png" alt="Audit log of team activity" width="440"><br>**Audit log** — who changed what, when (Pro+) |
-| <img src="docs/screenshots/viewer-access-denied.png" alt="Viewer sees access denied on the billing page" width="440"><br>**RBAC** — a Viewer opening Billing by URL | <img src="docs/screenshots/landing.png" alt="Marketing landing page" width="440"><br>**Landing page** with pricing |
+| <img src="docs/screenshots/events.png" alt="Event explorer listing individual events with properties" width="440"><br>**Events** — every API event, filterable, with in-place refresh | <img src="docs/screenshots/members.png" alt="Members table with role selectors and pending invitations" width="440"><br>**Members** — roles, invitations, seat limits |
+| <img src="docs/screenshots/billing.png" alt="Billing page with plan, usage meters and plan cards" width="440"><br>**Billing** — plan, usage meters, Stripe Checkout | <img src="docs/screenshots/api-keys.png" alt="API keys page with usage instructions" width="440"><br>**API keys** — hashed, shown once, revocable |
+| <img src="docs/screenshots/audit-log.png" alt="Audit log of team activity" width="440"><br>**Audit log** — who changed what, when (Pro+) | <img src="docs/screenshots/viewer-access-denied.png" alt="Viewer sees access denied on the billing page" width="440"><br>**RBAC** — a Viewer opening Billing by URL |
 
 <p align="center">
   <img src="docs/screenshots/mobile-overview.png" alt="Overview on a phone" width="220">
@@ -92,9 +92,9 @@ Threat model, controls and the test that proves each one: **[docs/SECURITY.md](d
 
 | Suite | Count | What it covers |
 | --- | --: | --- |
-| Unit | 112 | Domain rules, use cases with in-memory fakes, the full role × operation authorization matrix, tenant isolation, demo read-only mode, Stripe adapter with real signatures |
-| Integration | 21 | Real Postgres: constraints, transaction rollback, cascades, UTC analytics SQL, audit pagination, HTTP route handlers end to end |
-| End-to-end | 7 (+2) | Playwright: sign-up → org → API key → ingest → dashboard; RBAC per role in the UI; mobile navigation; demo-mode smoke test |
+| Unit | 118 | Domain rules, use cases with in-memory fakes, the full role × operation authorization matrix, tenant isolation, demo read-only mode, Stripe adapter with real signatures |
+| Integration | 22 | Real Postgres: constraints, transaction rollback, cascades, UTC analytics SQL, audit pagination, HTTP route handlers end to end |
+| End-to-end | 7 (+2) | Playwright: sign-up → org → API key → ingest → dashboard → event explorer with in-place refresh; RBAC per role in the UI; mobile navigation; demo-mode smoke test |
 
 ```bash
 npm test                 # unit + integration (integration needs TEST_DATABASE_URL, otherwise skipped)

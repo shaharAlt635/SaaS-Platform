@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { READ_ONLY_MESSAGE, resolveOrgContext, type OrgContext } from "@/application/context";
-import { getAnalytics } from "@/application/use-cases/analytics";
+import { getAnalytics, listEvents } from "@/application/use-cases/analytics";
 import { createApiKey, listApiKeys, revokeApiKey } from "@/application/use-cases/api-keys";
 import { listAuditLog } from "@/application/use-cases/audit-log";
 import { getBillingOverview, openBillingPortal, startCheckout } from "@/application/use-cases/billing";
@@ -99,6 +99,7 @@ const CASES: Case[] = [
   },
   { name: "open billing portal", permission: "billing:manage", mutates: true, run: (fx, ctx) => openBillingPortal(fx.deps, ctx) },
   { name: "view analytics", permission: "analytics:read", mutates: false, run: (fx, ctx) => getAnalytics(fx.deps, ctx, { range: "30d" }) },
+  { name: "browse events", permission: "analytics:read", mutates: false, run: (fx, ctx) => listEvents(fx.deps, ctx) },
   { name: "view audit log", permission: "audit_log:read", mutates: false, run: (fx, ctx) => listAuditLog(fx.deps, ctx) },
 ];
 

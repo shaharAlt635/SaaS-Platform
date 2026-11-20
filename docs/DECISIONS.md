@@ -86,8 +86,8 @@ Short records of the choices that shape this codebase: the context, what was cho
 
 | Layer | Tool | Runs against | Purpose |
 | --- | --- | --- | --- |
-| Unit (112) | Vitest | In-memory fakes | Domain rules, use cases, the full authorization matrix, Stripe adapter |
-| Integration (21) | Vitest | Real Postgres (`TEST_DATABASE_URL`) | Constraints, transactions, cascades, raw SQL, HTTP route handlers |
+| Unit (118) | Vitest | In-memory fakes | Domain rules, use cases, the full authorization matrix, Stripe adapter |
+| Integration (22) | Vitest | Real Postgres (`TEST_DATABASE_URL`) | Constraints, transactions, cascades, raw SQL, HTTP route handlers |
 | End-to-end (7 + 2) | Playwright | Running app + seeded data | Critical journeys and RBAC as a user sees it; demo-mode smoke test |
 
 The weight is deliberately on fast tests of business rules. The integration suite exists because some guarantees only the database can give (a transaction actually rolling back, `ON DELETE CASCADE`, UTC bucketing). E2E covers what neither can: that the UI, session cookies and server actions work together. Integration tests skip themselves when no test database is configured, and refuse to run against `DATABASE_URL`.

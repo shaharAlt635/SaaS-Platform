@@ -5,6 +5,7 @@ import { getAnalytics } from "@/application/use-cases/analytics";
 import { EmptyState, PageHeader, StatCard } from "@/components/shared";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ANALYTICS_RANGES, type AnalyticsRange, RANGE_DAYS, RANGE_LABELS } from "@/domain/analytics";
+import { RefreshButton } from "@/components/client";
 import { MetricChartCard } from "@/features/analytics/components/metric-chart-card";
 import { container } from "@/infrastructure/container";
 import { cn, formatNumber } from "@/lib/utils";
@@ -32,6 +33,8 @@ export default async function AnalyticsPage({
         title="Analytics"
         description="Event volume and audience across your product."
         actions={
+          <>
+          <RefreshButton />
           <nav aria-label="Date range" className="inline-flex rounded-lg border bg-card p-0.5 text-sm shadow-xs">
             {ANALYTICS_RANGES.map((range) => {
               const available = report.availableRanges.includes(range);
@@ -60,6 +63,7 @@ export default async function AnalyticsPage({
               );
             })}
           </nav>
+          </>
         }
       />
 
@@ -94,7 +98,9 @@ export default async function AnalyticsPage({
                 {report.topEvents.map((event) => (
                   <li key={event.name} className="grid gap-1.5">
                     <div className="flex items-baseline justify-between gap-3 text-sm">
-                      <span className="truncate font-mono text-xs">{event.name}</span>
+                      <Link href={`${base}/events?name=${encodeURIComponent(event.name)}`} className="truncate font-mono text-xs hover:text-primary hover:underline">
+                        {event.name}
+                      </Link>
                       <span className="shrink-0 tabular-nums">
                         {formatNumber(event.count)} <span className="text-xs text-muted-foreground">({(event.share * 100).toFixed(1)}%)</span>
                       </span>

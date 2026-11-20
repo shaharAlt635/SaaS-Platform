@@ -158,6 +158,32 @@ describe.runIf(describeDb)("Postgres repositories", () => {
     });
   });
 
+  describe("event explorer queries", () => {
+    it("pages newest-received first, filters by name, and stays inside the tenant and window", async () => {
+      const { organization } = await createOrg(await createUser(), "acme");
+      const other = await createOrg(await createUser(), "other");
+      const base = Date.UTC(2026, 10, 20, 12);
+      await db.event.createMany({
+        data: [
+          ...Array.from({ length: 5 }, (_, i) => ({ organizationId: organization.id, name: i % 2 ? "signup" : "page_view", createdAt: new Date(base + i * 1000), occurredAt: new Date(base) })),
+          { organizationId: organization.id, name: "too_old", createdAt: new Date(base - 30 * DAY), occurredAt: new Date(base - 30 * DAY) },
+          { organizationId: other.organization.id, name: "secret", createdAt: new Date(base + 9000), occurredAt: new Date(base) },
+        ],
+      });
+      const since = new Date(base - DAY);
+
+      const first = await container.analytics.recent(organization.id, { since, limit: 3 });
+      expect(first.items.map((e) => e.receivedAt.getTime() - base)).toEqual([4000, 3000, 2000]);
+      const second = await container.analytics.recent(organization.id, { since, limit: 3, cursor: first.nextCursor! });
+      expect(second.items.map((e) => e.receivedAt.getTime() - base)).toEqual([1000, 0]);
+      expect(second.nextCursor).toBeNull();
+
+      const signups = await container.analytics.recent(organization.id, { since, limit: 10, name: "signup" });
+      expect(signups.items).toHaveLength(2);
+      expect(await container.analytics.eventNames(organization.id, since)).toEqual(["page_view", "signup"]);
+    });
+  });
+
   describe("audit log pagination", () => {
     it("walks every entry exactly once, newest first", async () => {
       const owner = await createUser();

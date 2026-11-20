@@ -18,7 +18,7 @@ export function createFakeDeps(now = new Date("2026-11-20T12:00:00Z")) {
   const subscriptions: Subscription[] = [];
   const processedEvents = new Set<string>();
   const apiKeys: Array<ApiKey & { keyHash: string }> = [];
-  const events: Array<TrackedEvent & { organizationId: string }> = [];
+  const events: Array<TrackedEvent & { organizationId: string; id: string; receivedAt: Date }> = [];
   const usage = new Map<string, number>();
   const auditLogs: Array<{ organizationId: string; action: string; actorId: string | null; metadata?: Record<string, unknown> }> = [];
   const sentEmails: Array<{ to: string; subject: string }> = [];
@@ -119,7 +119,7 @@ export function createFakeDeps(now = new Date("2026-11-20T12:00:00Z")) {
     },
     analytics: {
       ingest: async (organizationId, batch, period) => {
-        events.push(...batch.map((event) => ({ ...event, organizationId })));
+        events.push(...batch.map((event) => ({ ...event, organizationId, id: id("evt"), receivedAt: now })));
         usage.set(`${organizationId}:${period}`, (usage.get(`${organizationId}:${period}`) ?? 0) + batch.length);
       },
       usage: async (organizationId, period) => usage.get(`${organizationId}:${period}`) ?? 0,
@@ -129,6 +129,17 @@ export function createFakeDeps(now = new Date("2026-11-20T12:00:00Z")) {
       },
       daily: async () => [],
       topEvents: async () => [],
+      recent: async (organizationId, { since, limit, cursor, name }) => {
+        const all = events
+          .filter((e) => e.organizationId === organizationId && e.receivedAt >= since && (!name || e.name === name))
+          .reverse();
+        const start = cursor ? all.findIndex((e) => e.id === cursor) + 1 : 0;
+        const page = all.slice(start, start + limit);
+        const items = page.map(({ organizationId: _org, ...event }) => event);
+        return { items, nextCursor: start + limit < all.length ? (page.at(-1)?.id ?? null) : null };
+      },
+      eventNames: async (organizationId, since) =>
+        [...new Set(events.filter((e) => e.organizationId === organizationId && e.receivedAt >= since).map((e) => e.name))].sort(),
     },
     auditLogs: {
       record: async (entry) => void auditLogs.push(entry),

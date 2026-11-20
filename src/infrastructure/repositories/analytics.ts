@@ -1,6 +1,6 @@
 import type { AnalyticsRepository } from "@/application/ports";
 import type { DailyPoint, Window } from "@/domain/analytics";
-import type { TrackedEvent } from "@/domain/entities";
+import type { StoredEvent, TrackedEvent } from "@/domain/entities";
 import { Prisma } from "@/generated/prisma/client";
 import type { Database } from "../db";
 
@@ -64,5 +64,33 @@ export class PrismaAnalyticsRepository implements AnalyticsRepository {
       take: limit,
     });
     return rows.map((row) => ({ name: row.name, count: row._count._all }));
+  }
+
+  async recent(
+    organizationId: string,
+    { since, limit, cursor, name }: { since: Date; limit: number; cursor?: string; name?: string },
+  ): Promise<{ items: StoredEvent[]; nextCursor: string | null }> {
+    const rows = await this.db.event.findMany({
+      where: { organizationId, createdAt: { gte: since }, ...(name ? { name } : {}) },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: { id: true, name: true, distinctId: true, properties: true, occurredAt: true, createdAt: true },
+    });
+    const items = rows.slice(0, limit).map(({ createdAt, properties, ...row }) => ({
+      ...row,
+      properties: (properties as Record<string, unknown> | null) ?? null,
+      receivedAt: createdAt,
+    }));
+    return { items, nextCursor: rows.length > limit ? (items.at(-1)?.id ?? null) : null };
+  }
+
+  async eventNames(organizationId: string, since: Date): Promise<string[]> {
+    const rows = await this.db.event.groupBy({
+      by: ["name"],
+      where: { organizationId, createdAt: { gte: since } },
+      orderBy: { name: "asc" },
+    });
+    return rows.map((row) => row.name);
   }
 }

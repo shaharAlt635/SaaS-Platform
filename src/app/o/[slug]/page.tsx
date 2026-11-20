@@ -3,6 +3,7 @@ import Link from "next/link";
 import { can } from "@/application/context";
 import { getOverview } from "@/application/use-cases/overview";
 import { TrendChart } from "@/components/charts/trend-chart";
+import { RefreshButton } from "@/components/client";
 import { EmptyState, PageHeader, StatCard } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,11 +28,14 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
         title={`Welcome back, ${firstName}`}
         description={`Here's what's happening in ${ctx.organization.name} over the last 30 days.`}
         actions={
-          <Button asChild variant="outline" size="sm">
-            <Link href={`${base}/analytics`}>
-              Open analytics <ArrowRight />
-            </Link>
-          </Button>
+          <>
+            <RefreshButton />
+            <Button asChild variant="outline" size="sm">
+              <Link href={`${base}/events`}>
+                View events <ArrowRight />
+              </Link>
+            </Button>
+          </>
         }
       />
 
@@ -71,7 +75,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent activity</CardTitle>
+            <CardTitle>Organization Recent Activity</CardTitle>
             <CardDescription>Changes made by your team</CardDescription>
           </CardHeader>
           <CardContent>

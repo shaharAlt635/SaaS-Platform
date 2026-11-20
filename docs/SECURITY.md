@@ -62,7 +62,7 @@ Rules beyond the matrix, all in the application layer ([members.ts](../src/appli
 
 | What | Where |
 | --- | --- |
-| **Every protected use case × every role** must match the matrix exactly (68 cases), and the test fails if a permission exists that no case exercises | [tests/authorization.test.ts](../tests/authorization.test.ts) |
+| **Every protected use case × every role** must match the matrix exactly (72 cases), and the test fails if a permission exists that no case exercises | [tests/authorization.test.ts](../tests/authorization.test.ts) |
 | Owner of org A, acting on org B's members, invitations and keys by ID → `NotFound`, nothing changes | [tests/authorization.test.ts](../tests/authorization.test.ts) |
 | Read-only demo orgs block every mutation, even for the owner | [tests/authorization.test.ts](../tests/authorization.test.ts) |
 | Escalation, last-owner and self-role rules | [tests/use-cases.test.ts](../tests/use-cases.test.ts) |

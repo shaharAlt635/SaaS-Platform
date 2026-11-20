@@ -36,6 +36,7 @@ for (const scheme of ["light", "dark"] as const) {
     await shoot(page, "/o/acme/analytics?range=90d", `analytics${suffix}`);
     if (scheme === "dark") return;
 
+    await shoot(page, "/o/acme/events", "events");
     await shoot(page, "/o/acme/members", "members");
     await shoot(page, "/o/acme/billing", "billing", { height: 1080 });
     await shoot(page, "/o/acme/api-keys", "api-keys");
