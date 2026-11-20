@@ -13,7 +13,7 @@ A production-ready, multi-tenant SaaS dashboard: authentication, organizations, 
 | **Analytics** | `POST /api/v1/events` ingestion with hashed API keys, per-key rate limiting and monthly quotas; dashboards for volume, unique users, engagement and top events with period-over-period deltas |
 | **Audit log** | Every sensitive change (members, roles, keys, settings, billing) recorded and browsable (Pro+) |
 | **UI** | Responsive layout with mobile drawer, dark mode, accessible components (Radix), toasts, skeletons, empty states |
-| **Ops** | Env validation, security headers, health check, structured logs, Dockerfile, CI workflow, seed data |
+| **Ops** | Env validation, security headers, health check, structured logs, Dockerfile, seed data |
 
 ## Architecture
 
@@ -162,7 +162,7 @@ Send one event or `{"events": [...]}` with up to 100. Responses: `202` accepted,
 | `npm run check` | Lint + typecheck + tests |
 | `npm test` | Unit tests (Vitest) |
 | `npm run db:migrate` | Create & apply a migration in development |
-| `npm run db:deploy` | Apply migrations (CI / production) |
+| `npm run db:deploy` | Apply migrations (production) |
 | `npm run db:seed` | Load demo data |
 | `npm run db:studio` | Browse data in Prisma Studio |
 
@@ -171,7 +171,6 @@ Send one event or `{"events": [...]}` with up to 100. Responses: `202` accepted,
 - **Docker:** `docker build -t saas-platform .` produces a standalone Next.js image running as a non-root user. Env vars are validated at startup.
 - **Migrations:** run `npx prisma migrate deploy` as a release step before new instances start.
 - **Health check:** `GET /api/health` returns `503` when the database is unreachable.
-- **CI:** [.github/workflows/ci.yml](.github/workflows/ci.yml) runs lint, typecheck, tests, migrations against Postgres, and a production build.
 
 ### Production checklist
 
