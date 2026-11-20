@@ -1,78 +1,144 @@
-# SaaS Platform
+<div align="center">
 
-A production-ready, multi-tenant SaaS dashboard: authentication, organizations, role-based permissions, Stripe subscription billing, product analytics with an ingestion API, and an audit log — built with **Next.js 16, TypeScript, PostgreSQL and Prisma 7**, following clean architecture.
+# Acme — multi-tenant SaaS analytics platform
 
-## Features
+A production-grade SaaS dashboard: authentication, organizations, role-based access control, Stripe subscriptions, a product-analytics ingestion API and an audit log — built with **Next.js 16, TypeScript, PostgreSQL and Prisma** on a clean, tested architecture.
 
-| Area | What you get |
-| --- | --- |
-| **Authentication** | Email + password, optional GitHub/Google OAuth, password reset, optional email verification, DB-backed sessions, auth rate limiting ([Better Auth](https://better-auth.com)) |
-| **Organizations** | Multi-tenant workspaces, org switcher, onboarding, slug-based URLs, invitations by email (hashed, expiring tokens), leave / delete org |
-| **RBAC** | Owner / Admin / Member / Viewer with a central permission matrix, anti-escalation rules and last-owner protection |
-| **Billing** | Stripe Checkout + Customer Portal, free trials, plan limits (seats, events/month, API keys), feature gating, idempotent webhooks |
-| **Analytics** | `POST /api/v1/events` ingestion with hashed API keys, per-key rate limiting and monthly quotas; dashboards for volume, unique users, engagement and top events with period-over-period deltas |
-| **Audit log** | Every sensitive change (members, roles, keys, settings, billing) recorded and browsable (Pro+) |
-| **UI** | Responsive layout with mobile drawer, dark mode, accessible components (Radix), toasts, skeletons, empty states |
-| **Ops** | Env validation, security headers, health check, structured logs, Dockerfile, seed data |
+**[Live demo](LIVE_DEMO_URL)** · [Architecture](docs/ARCHITECTURE.md) · [Security model](docs/SECURITY.md) · [Technical decisions](docs/DECISIONS.md)
+
+![Next.js 16](https://img.shields.io/badge/Next.js-16-000?logo=nextdotjs)
+![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=fff)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma_7-4169e1?logo=postgresql&logoColor=fff)
+![Stripe](https://img.shields.io/badge/Billing-Stripe-635bff?logo=stripe&logoColor=fff)
+![Tests](https://img.shields.io/badge/tests-142_passing-2ea44f)
+
+<img src="docs/screenshots/overview.png" alt="Organization overview: KPIs, events per day and recent team activity" width="900">
+
+</div>
+
+## Try it
+
+Open the **[live demo](LIVE_DEMO_URL)** and click **Explore the live demo** — no sign-up needed. You land in a seeded Pro workspace with six months of events. It's read-only and resets nightly; sign up to get your own organization and try every write path.
+
+To see role-based access from the other side, sign in as a different demo member (password `demo-password-123`):
+
+| Account | Role | What changes |
+| --- | --- | --- |
+| `demo@acme.test` | Owner | Everything, including billing and deleting the org |
+| `jordan@acme.test` | Admin | Manages members below Admin, API keys, settings; can't touch billing or owners |
+| `sam@acme.test` | Member | Analytics and API keys, read-only |
+| `riley@acme.test` | Viewer | Analytics only — billing, keys and audit log are refused even by direct URL |
+
+## Highlights
+
+- **Multi-tenancy done properly.** Users belong to many organizations with a different role in each. Every query is tenant-scoped; non-members get a 404, and another tenant's IDs behave as if they don't exist.
+- **One authorization policy, tested exhaustively.** A single permission matrix is enforced inside every use case, and a test runs **every protected operation as every role** (68 cases) and fails if any outcome drifts from the matrix.
+- **Real billing.** Stripe Checkout, Customer Portal and trials; plan limits on seats, events, API keys and history; idempotent, order-tolerant webhooks.
+- **A working product.** `POST /api/v1/events` with hashed API keys, per-key rate limits and monthly quotas, feeding dashboards with period-over-period comparisons.
+- **Clean architecture.** Domain → application → infrastructure → presentation, with the dependency rule enforced by ESLint and business logic tested without a database.
+- **Production concerns covered.** Env validation, security headers, audit trail, health check, structured logs, Docker image, migrations in the deploy pipeline.
+
+## Screenshots
+
+| | |
+| :-: | :-: |
+| <img src="docs/screenshots/analytics.png" alt="Analytics with KPIs, daily events and top events" width="440"><br>**Analytics** — 7/30/90-day and 12-month ranges, gated by plan | <img src="docs/screenshots/overview-dark.png" alt="Overview in dark mode" width="440"><br>**Dark mode** — tokens tuned per theme |
+| <img src="docs/screenshots/members.png" alt="Members table with role selectors and pending invitations" width="440"><br>**Members** — roles, invitations, seat limits | <img src="docs/screenshots/billing.png" alt="Billing page with plan, usage meters and plan cards" width="440"><br>**Billing** — plan, usage meters, Stripe Checkout |
+| <img src="docs/screenshots/api-keys.png" alt="API keys page with usage instructions" width="440"><br>**API keys** — hashed, shown once, revocable | <img src="docs/screenshots/audit-log.png" alt="Audit log of team activity" width="440"><br>**Audit log** — who changed what, when (Pro+) |
+| <img src="docs/screenshots/viewer-access-denied.png" alt="Viewer sees access denied on the billing page" width="440"><br>**RBAC** — a Viewer opening Billing by URL | <img src="docs/screenshots/landing.png" alt="Marketing landing page" width="440"><br>**Landing page** with pricing |
+
+<p align="center">
+  <img src="docs/screenshots/mobile-overview.png" alt="Overview on a phone" width="220">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-navigation.png" alt="Navigation drawer on a phone" width="220">
+</p>
 
 ## Architecture
 
-The code follows the **dependency rule**: inner layers never import outer ones. ESLint enforces it (`no-restricted-imports` in [eslint.config.mjs](eslint.config.mjs)).
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│ Presentation   src/app, src/features, src/components, src/server │  Next.js routes, server actions, React UI
-├──────────────────────────────────────────────────────────────────┤
-│ Infrastructure src/infrastructure                                │  Prisma repositories, Stripe, Resend, Better Auth
-├──────────────────────────────────────────────────────────────────┤
-│ Application    src/application                                   │  Use cases + ports (interfaces)
-├──────────────────────────────────────────────────────────────────┤
-│ Domain         src/domain                                        │  Entities, RBAC policy, plans, validation, errors
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    ui[Server components<br/>& server actions] --> uc[Use cases<br/>authorize · validate · limits]
+    api[Route handlers<br/>events · webhooks · cron] --> uc
+    uc --> domain[Domain<br/>RBAC · plans · rules]
+    uc --> ports[/Ports/]
+    infra[Prisma · Stripe · Resend · Better Auth] -. implements .-> ports
+    infra --> pg[(PostgreSQL)]
 ```
 
-- **Domain** (`src/domain`) — pure TypeScript: the permission matrix, plan limits, billing rules, analytics math, Zod input schemas and typed domain errors. No framework imports.
-- **Application** (`src/application`) — one function per use case (`inviteMember`, `startCheckout`, `handleBillingWebhook`, …). Each takes its dependencies explicitly (`Pick<Dependencies, …>`), authorizes the actor, validates input and talks only to **ports** ([ports.ts](src/application/ports.ts)).
-- **Infrastructure** (`src/infrastructure`) — adapters implementing the ports: Prisma repositories, `StripeBillingGateway`, `ResendMailer`, Better Auth config. [container.ts](src/infrastructure/container.ts) is the composition root.
-- **Presentation** — server components call use cases directly; mutations go through server actions wrapped by [`runAction`](src/server/action.ts), which maps domain errors to typed `ActionResult`s. Feature UI lives in `src/features/<feature>`.
+| Layer | Path | Depends on |
+| --- | --- | --- |
+| Domain | [src/domain](src/domain) | nothing (pure TypeScript + Zod) |
+| Application | [src/application](src/application) | domain, its own port interfaces |
+| Infrastructure | [src/infrastructure](src/infrastructure) | domain, application ports, vendors |
+| Presentation | [src/app](src/app), [src/features](src/features), [src/components](src/components) | everything |
 
-Because use cases only see ports, they're unit-tested against in-memory fakes ([tests/fakes.ts](tests/fakes.ts)) — no database needed.
+Request flows, the data model and sequence diagrams for ingestion and billing are in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
-### Project layout
+## Security and authorization
 
+| Concern | How it's handled |
+| --- | --- |
+| Authentication | Better Auth: scrypt passwords, OAuth, DB-validated sessions (revocation is immediate), rate limits, origin checks |
+| Authorization | Central matrix (`src/domain/rbac.ts`), enforced in every use case; UI only hides what you can't use |
+| Privilege escalation | Grant ≤ own role; admins can't manage admins/owners; no self-promotion; last owner protected |
+| Tenant isolation | Org resolved with membership; 404 for outsiders; foreign IDs = not found; events scoped by API key |
+| Secrets | API keys and invite tokens stored as SHA-256, shown once; env validated at boot |
+| Payments | Signature-verified, idempotent webhooks; state re-fetched from Stripe |
+| Public demo | Read-only enforced in use cases; demo accounts frozen at the auth layer; nightly reset |
+
+Threat model, controls and the test that proves each one: **[docs/SECURITY.md](docs/SECURITY.md)**.
+
+## Testing
+
+| Suite | Count | What it covers |
+| --- | --: | --- |
+| Unit | 112 | Domain rules, use cases with in-memory fakes, the full role × operation authorization matrix, tenant isolation, demo read-only mode, Stripe adapter with real signatures |
+| Integration | 21 | Real Postgres: constraints, transaction rollback, cascades, UTC analytics SQL, audit pagination, HTTP route handlers end to end |
+| End-to-end | 7 (+2) | Playwright: sign-up → org → API key → ingest → dashboard; RBAC per role in the UI; mobile navigation; demo-mode smoke test |
+
+```bash
+npm test                 # unit + integration (integration needs TEST_DATABASE_URL, otherwise skipped)
 ```
-prisma/                 schema, migrations, seed
-src/
-  app/                  routes: (marketing), (auth), onboarding, invite, account, o/[slug]/*, api/*
-  application/          use cases, ports, auth context, emails
-  components/           UI primitives (ui/), app shell, charts
-  config/               validated env, site constants
-  domain/               entities, rbac, plans, billing, analytics, validation, errors
-  features/             feature UI + server actions (members, billing, api-keys, …)
-  infrastructure/       prisma repositories, stripe, mail, auth, rate limiter, container
-  server/               request-scoped session/org context, action runner
-  proxy.ts              optimistic auth gate (Next.js 16 "proxy", formerly middleware)
-tests/                  vitest unit tests
+
+```bash
+npm run test:e2e         # needs the dev server's database seeded: npm run db:seed
 ```
 
-## Getting started
+## Technical decisions
+
+Thirteen short decision records — why Next.js server actions, why own RBAC on top of Better Auth, why DB sessions, why 404 for non-members, raw SQL for analytics, usage counters, SHA-256 for keys, webhook design, testing strategy, demo mode, hosting — with the trade-offs of each: **[docs/DECISIONS.md](docs/DECISIONS.md)**.
+
+## Tech stack
+
+**App** Next.js 16 (App Router, RSC, server actions) · React 19 · TypeScript (strict) · Tailwind CSS 4 · Radix UI · Recharts
+**Data** PostgreSQL · Prisma 7 (driver adapters) · Zod 4
+**Services** Better Auth · Stripe · Resend
+**Quality** Vitest · Playwright · ESLint with layer-boundary rules
+**Ops** Vercel + Neon · Vercel Cron · Docker (standalone output)
+
+## Run it locally
 
 **Prerequisites:** Node.js ≥ 20.19 and PostgreSQL (Docker, a hosted database, or Prisma's local dev server).
 
 ```bash
 npm install
+```
+
+```bash
 cp .env.example .env
 ```
 
 Set `BETTER_AUTH_SECRET` (e.g. `openssl rand -base64 32`) and `DATABASE_URL`. For a database, pick one:
 
 ```bash
-docker compose up -d                     # Postgres 17 on localhost:5432 (matches .env.example)
+docker compose up -d
 ```
 
 ```bash
-npx prisma dev                           # or: local Prisma Postgres, no Docker needed — copy the TCP URL it prints
+npx prisma dev
 ```
+
+`docker compose` starts Postgres 17 on `localhost:5432`, matching `.env.example`. `npx prisma dev` needs no Docker: copy the TCP URL it prints into `DATABASE_URL` and set `DATABASE_POOL_MAX=1` (its local Postgres handles one connection at a time).
 
 Then migrate, seed and run:
 
@@ -88,34 +154,22 @@ npm run db:seed
 npm run dev
 ```
 
-Open http://localhost:3000. The seed creates a demo workspace with ~6 months of events:
+Open http://localhost:3000 and sign in with any account from the [Try it](#try-it) table. Without `RESEND_API_KEY`, emails (invitations, password resets) are printed to the server console. The seed creates publicly known demo accounts: run it only locally or on a demo deployment.
 
-| Email | Password | Role in "Acme Inc" |
-| --- | --- | --- |
-| `demo@acme.test` | `demo-password-123` | Owner (also owns "Side Project" on the Free plan) |
-| `jordan@acme.test` | `demo-password-123` | Admin |
-| `sam@acme.test` | `demo-password-123` | Member |
-| `riley@acme.test` | `demo-password-123` | Viewer |
+## Deploy (Vercel + Neon)
 
-> These are local development fixtures. Don't run the seed against production.
+1. Import the repository in Vercel.
+2. Add Postgres: **Storage → Create → Neon**. This sets `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` (used for migrations).
+3. Add environment variables: `BETTER_AUTH_SECRET`, and for a public demo `DEMO_MODE=true` and `CRON_SECRET`. `APP_URL` defaults to the production domain.
+4. Deploy. The build runs `prisma migrate deploy && next build` ([vercel.json](vercel.json)).
+5. Seed once from your machine with the Neon URL (`DATABASE_URL=… npm run db:seed`); afterwards Vercel Cron rebuilds the demo nightly.
 
-Without `RESEND_API_KEY`, emails (invitations, password resets) are printed to the server console.
+Optional: Stripe (`STRIPE_*`, webhook to `/api/webhooks/stripe` for `checkout.session.completed` and `customer.subscription.*`), Resend (`RESEND_API_KEY`, `EMAIL_FROM`), GitHub/Google OAuth. A Dockerfile is included for self-hosting.
 
-## Roles & permissions
+<details>
+<summary><strong>Plans, events API, scripts and production checklist</strong></summary>
 
-Defined once in [src/domain/rbac.ts](src/domain/rbac.ts) and enforced in every use case.
-
-| Permission | Owner | Admin | Member | Viewer |
-| --- | :-: | :-: | :-: | :-: |
-| View organization, members, analytics | ✓ | ✓ | ✓ | ✓ |
-| View API keys | ✓ | ✓ | ✓ | |
-| Edit settings, invite / manage members, manage API keys | ✓ | ✓ | | |
-| View billing & audit log | ✓ | ✓ | | |
-| Manage billing, delete organization | ✓ | | | |
-
-Rules: you can only grant roles up to your own; admins can't manage other admins or owners; nobody changes their own role; an organization always keeps at least one owner. Non-members get a 404 for an organization (existence isn't leaked).
-
-## Plans
+### Plans
 
 Defined in [src/domain/plans.ts](src/domain/plans.ts) — prices shown in the UI, limits enforced in use cases.
 
@@ -124,27 +178,11 @@ Defined in [src/domain/plans.ts](src/domain/plans.ts) — prices shown in the UI
 | Seats (members + pending invites) | 3 | 15 | Unlimited |
 | Events / month | 10k | 1M | 20M |
 | Active API keys | 2 | 10 | Unlimited |
-| Analytics history | 7 days | 90 days | 1 year |
+| Analytics history | 7 days | 90 days | 12 months |
 | Audit log | | ✓ | ✓ |
 | Trial | | 14 days | 14 days |
 
-## Billing (Stripe)
-
-Billing is off until `STRIPE_SECRET_KEY` is set; the app runs fully on the Free plan without it.
-
-1. In Stripe, create **Pro** and **Business** products, each with a monthly and a yearly recurring price. Put the four price IDs in `STRIPE_PRICE_*`.
-2. Enable the [Customer Portal](https://dashboard.stripe.com/test/settings/billing/portal) (allow plan switching and cancellation).
-3. Add a webhook endpoint `https://<your-domain>/api/webhooks/stripe` subscribed to `checkout.session.completed` and `customer.subscription.created|updated|deleted|paused|resumed`; set `STRIPE_WEBHOOK_SECRET`.
-
-Locally, forward webhooks with the Stripe CLI:
-
-```bash
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
-```
-
-The webhook handler verifies signatures, re-fetches the latest subscription from Stripe (so out-of-order deliveries converge), records processed event IDs (so retries are no-ops), and ignores stale events from an older subscription.
-
-## Events API
+### Events API
 
 Create a key under **API keys**, then:
 
@@ -152,30 +190,35 @@ Create a key under **API keys**, then:
 curl -X POST http://localhost:3000/api/v1/events -H "Authorization: Bearer ak_..." -H "Content-Type: application/json" -d '{"name":"signup","distinctId":"user_42","properties":{"plan":"pro"}}'
 ```
 
-Send one event or `{"events": [...]}` with up to 100. Responses: `202` accepted, `400` invalid payload, `401` bad key, `413` body over 256 KB, `429` rate limit (600 req/min per key) or monthly quota reached. Keys are stored as SHA-256 hashes and shown once.
+Send one event or `{"events": [...]}` with up to 100. Responses: `202` accepted, `400` invalid payload, `401` bad key, `413` body over 256 KB, `429` rate limit (600 req/min per key) or monthly quota reached.
 
-## Scripts
+### Stripe locally
+
+Create **Pro** and **Business** products with monthly and yearly prices, put the four price IDs in `STRIPE_PRICE_*`, enable the Customer Portal, then forward webhooks:
+
+```bash
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+
+### Scripts
 
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` / `build` / `start` | Develop, build, serve |
 | `npm run check` | Lint + typecheck + tests |
-| `npm test` | Unit tests (Vitest) |
+| `npm test` / `npm run test:e2e` | Vitest / Playwright |
 | `npm run db:migrate` | Create & apply a migration in development |
 | `npm run db:deploy` | Apply migrations (production) |
 | `npm run db:seed` | Load demo data |
 | `npm run db:studio` | Browse data in Prisma Studio |
 
-## Deployment
-
-- **Docker:** `docker build -t saas-platform .` produces a standalone Next.js image running as a non-root user. Env vars are validated at startup.
-- **Migrations:** run `npx prisma migrate deploy` as a release step before new instances start.
-- **Health check:** `GET /api/health` returns `503` when the database is unreachable.
+Screenshots are reproducible: build, start on port 3200, then `CAPTURE_SCREENSHOTS=1 E2E_BASE_URL=http://localhost:3200 npx playwright test screenshots --project=desktop`.
 
 ### Production checklist
 
-- Set `APP_URL` to your public HTTPS origin and a strong `BETTER_AUTH_SECRET`.
-- Configure `RESEND_API_KEY` + `EMAIL_FROM` with a verified domain, then set `REQUIRE_EMAIL_VERIFICATION=true`.
-- When running more than one instance, move the ingestion rate limiter ([rate-limit.ts](src/infrastructure/rate-limit.ts)) and Better Auth's rate-limit storage to Redis or the database.
-- Use a pooled connection string (e.g. PgBouncer / Prisma Postgres) for serverless deployments.
-- Event quotas are soft limits under heavy concurrency (checked, then incremented); move to an atomic conditional increment if you need hard caps.
+- Set a strong `BETTER_AUTH_SECRET`; set `APP_URL` if you use a custom domain.
+- Configure `RESEND_API_KEY` + `EMAIL_FROM` with a verified domain, then `REQUIRE_EMAIL_VERIFICATION=true`.
+- On several instances, move the in-memory rate limiters to Redis or the database.
+- Event quotas are soft under heavy concurrency; use an atomic conditional increment for hard caps.
+
+</details>

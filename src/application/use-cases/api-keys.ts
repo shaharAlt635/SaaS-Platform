@@ -11,7 +11,7 @@ import { getOrganizationPlan } from "./billing";
 export const API_KEY_PREFIX = "ak_";
 const TOUCH_INTERVAL_MS = 60_000;
 
-export function listApiKeys(deps: Pick<Dependencies, "apiKeys">, ctx: OrgContext): Promise<ApiKey[]> {
+export async function listApiKeys(deps: Pick<Dependencies, "apiKeys">, ctx: OrgContext): Promise<ApiKey[]> {
   authorize(ctx, "api_keys:read");
   return deps.apiKeys.list(ctx.organization.id);
 }

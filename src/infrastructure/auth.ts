@@ -1,8 +1,10 @@
 import "server-only";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { actionLinkEmail } from "@/application/emails";
+import { isDemoEmail } from "@/config/demo";
 import { env } from "@/config/env";
 import { site } from "@/config/site";
 import { container } from "./container";
@@ -27,11 +29,37 @@ function sendInBackground(to: string, content: ReturnType<typeof actionLinkEmail
   });
 }
 
+/** Account-changing endpoints that would let one visitor lock others out of the shared demo. */
+const DEMO_PROTECTED_PATHS = new Set([
+  "/change-password",
+  "/change-email",
+  "/update-user",
+  "/delete-user",
+  "/set-password",
+  "/link-social",
+  "/unlink-account",
+  "/revoke-session",
+  "/revoke-sessions",
+  "/revoke-other-sessions",
+]);
+
+const demoGuard = createAuthMiddleware(async (ctx) => {
+  if (!env.DEMO_MODE) return;
+  const forbidden = () => new APIError("FORBIDDEN", { message: "Demo accounts can't be changed. Create your own account to try this." });
+  const bodyEmail = typeof ctx.body?.email === "string" ? ctx.body.email : "";
+  if ((ctx.path === "/sign-up/email" || ctx.path === "/request-password-reset") && isDemoEmail(bodyEmail)) throw forbidden();
+  if (DEMO_PROTECTED_PATHS.has(ctx.path)) {
+    const session = await getSessionFromCtx(ctx);
+    if (session && isDemoEmail(session.user.email)) throw forbidden();
+  }
+});
+
 export const auth = betterAuth({
   appName: site.name,
   baseURL: env.APP_URL,
   secret: env.BETTER_AUTH_SECRET,
-  trustedOrigins: [env.APP_URL],
+  // Preview deployments get their own *.vercel.app URL.
+  trustedOrigins: [env.APP_URL, ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [])],
   database: prismaAdapter(db, { provider: "postgresql" }),
   emailAndPassword: {
     enabled: true,
@@ -88,6 +116,7 @@ export const auth = betterAuth({
       "/request-password-reset": { window: 300, max: 5 },
     },
   },
+  hooks: { before: demoGuard },
   // Must be last: lets server actions set auth cookies.
   plugins: [nextCookies()],
 });

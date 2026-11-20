@@ -156,6 +156,8 @@ export interface Logger {
 export interface AppConfig {
   appName: string;
   appUrl: string;
+  /** Organizations that can be viewed but not modified (the shared public demo). */
+  readOnlyOrganizationSlugs: readonly string[];
 }
 
 /** Everything a use case may depend on. Use cases declare the subset they need via `Pick`. */

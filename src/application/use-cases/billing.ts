@@ -3,7 +3,7 @@ import { BillingUnavailableError, ConflictError } from "@/domain/errors";
 import { type Plan, type PlanId, PLANS } from "@/domain/plans";
 import { checkoutSchema, parseInput } from "@/domain/validation";
 import { audit } from "../audit";
-import { authorize, can, type OrgContext } from "../context";
+import { assertWritable, authorize, can, type OrgContext } from "../context";
 import type { Dependencies } from "../ports";
 
 export async function getOrganizationPlan(deps: Pick<Dependencies, "subscriptions">, organizationId: string): Promise<PlanId> {
@@ -58,6 +58,7 @@ export async function startCheckout(
   input: unknown,
 ): Promise<string> {
   authorize(ctx, "billing:manage");
+  assertWritable(deps, ctx);
   if (!deps.billing.enabled) throw new BillingUnavailableError();
   const { plan, interval } = parseInput(checkoutSchema, input);
 
@@ -89,6 +90,7 @@ export async function openBillingPortal(
   ctx: OrgContext,
 ): Promise<string> {
   authorize(ctx, "billing:manage");
+  assertWritable(deps, ctx);
   if (!deps.billing.enabled) throw new BillingUnavailableError();
   if (!ctx.organization.stripeCustomerId) throw new ConflictError("There's no billing account yet. Choose a plan first.");
   return deps.billing.createPortalSession({

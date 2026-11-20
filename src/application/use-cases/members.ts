@@ -3,12 +3,12 @@ import { ConflictError, ForbiddenError, NotFoundError } from "@/domain/errors";
 import { canAssignRole, canManageMember } from "@/domain/rbac";
 import { changeRoleSchema, idSchema, parseInput } from "@/domain/validation";
 import { audit } from "../audit";
-import { authorize, type OrgContext } from "../context";
+import { assertWritable, authorize, type OrgContext } from "../context";
 import type { Dependencies } from "../ports";
 
-type Deps = Pick<Dependencies, "memberships" | "auditLogs" | "logger">;
+type Deps = Pick<Dependencies, "memberships" | "auditLogs" | "logger" | "config">;
 
-export function listMembers(deps: Pick<Dependencies, "memberships">, ctx: OrgContext): Promise<Member[]> {
+export async function listMembers(deps: Pick<Dependencies, "memberships">, ctx: OrgContext): Promise<Member[]> {
   authorize(ctx, "members:read");
   return deps.memberships.list(ctx.organization.id);
 }
@@ -29,6 +29,7 @@ async function assertNotLastOwner(deps: Deps, target: Membership): Promise<void>
 
 export async function changeMemberRole(deps: Deps, ctx: OrgContext, input: unknown): Promise<void> {
   authorize(ctx, "members:update");
+  assertWritable(deps, ctx);
   const { membershipId, role } = parseInput(changeRoleSchema, input);
   const target = await findTarget(deps, ctx, membershipId);
 
@@ -47,6 +48,7 @@ export async function changeMemberRole(deps: Deps, ctx: OrgContext, input: unkno
 }
 
 export async function removeMember(deps: Deps, ctx: OrgContext, input: unknown): Promise<{ self: boolean }> {
+  assertWritable(deps, ctx);
   const { id } = parseInput(idSchema, input);
   const target = await findTarget(deps, ctx, id);
   const self = target.userId === ctx.actor.userId;

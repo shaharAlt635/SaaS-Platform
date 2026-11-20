@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type * as React from "react";
+import { isReadOnly } from "@/application/context";
 import { getOrganizationPlan } from "@/application/use-cases/billing";
 import { listOrganizations } from "@/application/use-cases/organizations";
 import { AppShell } from "@/components/layout/app-shell";
@@ -29,6 +30,7 @@ export default async function OrganizationLayout({ children, params }: Props) {
       user={{ name: ctx.actor.name, email: ctx.actor.email, image: session?.user.image ?? null }}
       organizations={organizations.map(({ name, slug, role }) => ({ name, slug, role }))}
       plan={{ id: plan.id, name: plan.name }}
+      readOnly={isReadOnly(container, ctx)}
     >
       {children}
     </AppShell>

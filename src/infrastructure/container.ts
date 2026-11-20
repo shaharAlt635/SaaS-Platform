@@ -1,6 +1,7 @@
 import "server-only";
 import type { Dependencies } from "@/application/ports";
 import { env } from "@/config/env";
+import { DEMO } from "@/config/demo";
 import { site } from "@/config/site";
 import { DisabledBillingGateway, StripeBillingGateway } from "./billing/stripe-gateway";
 import { db } from "./db";
@@ -38,6 +39,10 @@ export const container: Dependencies = {
   billing,
   mailer: env.RESEND_API_KEY ? new ResendMailer(env.RESEND_API_KEY, env.EMAIL_FROM) : new ConsoleMailer(logger),
   logger,
-  config: { appName: site.name, appUrl: env.APP_URL },
+  config: {
+    appName: site.name,
+    appUrl: env.APP_URL,
+    readOnlyOrganizationSlugs: env.DEMO_MODE ? DEMO.organizationSlugs : [],
+  },
   clock: () => new Date(),
 };

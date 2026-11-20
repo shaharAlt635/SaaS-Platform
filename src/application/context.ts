@@ -23,6 +23,18 @@ export function authorize(ctx: OrgContext, permission: Permission): void {
   }
 }
 
+export const READ_ONLY_MESSAGE =
+  "This is a shared demo workspace, so changes are disabled. Create your own organization to try everything.";
+
+export function isReadOnly(deps: Pick<Dependencies, "config">, ctx: OrgContext): boolean {
+  return deps.config.readOnlyOrganizationSlugs.includes(ctx.organization.slug);
+}
+
+/** Blocks mutations in read-only organizations, independently of the actor's role. */
+export function assertWritable(deps: Pick<Dependencies, "config">, ctx: OrgContext): void {
+  if (isReadOnly(deps, ctx)) throw new ForbiddenError(READ_ONLY_MESSAGE);
+}
+
 export function can(ctx: OrgContext, permission: Permission): boolean {
   return hasPermission(ctx.membership.role, permission);
 }

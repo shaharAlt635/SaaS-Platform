@@ -10,7 +10,9 @@ import Link from "next/link";
 import { Logo } from "@/components/shared";
 import { ThemeToggle } from "@/components/client";
 import { Button } from "@/components/ui/button";
+import { env } from "@/config/env";
 import { site } from "@/config/site";
+import { DemoButton } from "@/features/auth/components/demo-button";
 import { PricingTable } from "@/features/billing/components/pricing-table";
 import { getSession } from "@/server/session";
 
@@ -71,9 +73,13 @@ export default async function LandingPage() {
                 <Button asChild size="lg">
                   <Link href="/sign-up">Start for free</Link>
                 </Button>
-                <Button asChild size="lg" variant="outline">
-                  <a href="#pricing">See pricing</a>
-                </Button>
+                {env.DEMO_MODE ? (
+                  <DemoButton size="lg" variant="outline" />
+                ) : (
+                  <Button asChild size="lg" variant="outline">
+                    <a href="#pricing">See pricing</a>
+                  </Button>
+                )}
               </div>
             </div>
             <ProductPreview />

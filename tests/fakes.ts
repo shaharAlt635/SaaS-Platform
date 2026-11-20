@@ -149,7 +149,7 @@ export function createFakeDeps(now = new Date("2026-11-20T12:00:00Z")) {
     },
     mailer: { send: async (message) => void sentEmails.push(message) },
     logger: { info: () => {}, warn: () => {}, error: () => {} },
-    config: { appName: "Test", appUrl: "https://app.test" },
+    config: { appName: "Test", appUrl: "https://app.test", readOnlyOrganizationSlugs: ["demo-org"] },
     clock: () => now,
   };
 

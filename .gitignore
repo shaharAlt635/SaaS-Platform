@@ -21,3 +21,7 @@ src/generated/
 coverage/
 npm-debug.log*
 .vercel
+
+# playwright
+/test-results/
+/playwright-report/

@@ -4,7 +4,7 @@ import { assertWithinLimit, PLANS } from "@/domain/plans";
 import { canAssignRole, type Role } from "@/domain/rbac";
 import { idSchema, inviteMemberSchema, parseInput } from "@/domain/validation";
 import { audit } from "../audit";
-import { type Actor, authorize, type OrgContext } from "../context";
+import { type Actor, assertWritable, authorize, type OrgContext } from "../context";
 import { generateToken, hashToken } from "../crypto";
 import { invitationEmail } from "../emails";
 import type { Dependencies } from "../ports";
@@ -18,6 +18,7 @@ export async function inviteMember(
   input: unknown,
 ): Promise<{ invitation: Invitation; inviteUrl: string }> {
   authorize(ctx, "members:invite");
+  assertWritable(deps, ctx);
   const { email, role } = parseInput(inviteMemberSchema, input);
   const organizationId = ctx.organization.id;
   const now = deps.clock();
@@ -64,17 +65,18 @@ export async function inviteMember(
   return { invitation, inviteUrl };
 }
 
-export function listInvitations(deps: Pick<Dependencies, "invitations" | "clock">, ctx: OrgContext): Promise<Invitation[]> {
+export async function listInvitations(deps: Pick<Dependencies, "invitations" | "clock">, ctx: OrgContext): Promise<Invitation[]> {
   authorize(ctx, "members:read");
   return deps.invitations.listPending(ctx.organization.id, deps.clock());
 }
 
 export async function revokeInvitation(
-  deps: Pick<Dependencies, "invitations" | "auditLogs" | "logger">,
+  deps: Pick<Dependencies, "invitations" | "auditLogs" | "logger" | "config">,
   ctx: OrgContext,
   input: unknown,
 ): Promise<void> {
   authorize(ctx, "members:invite");
+  assertWritable(deps, ctx);
   const { id } = parseInput(idSchema, input);
   const invitation = await deps.invitations.findById(id);
   if (!invitation || invitation.organizationId !== ctx.organization.id) throw new NotFoundError("Invitation");

@@ -46,6 +46,7 @@ interface ShellProps {
   user: { name: string; email: string; image: string | null };
   organizations: Array<{ name: string; slug: string; role: Role }>;
   plan: { id: PlanId; name: string };
+  readOnly: boolean;
   children: React.ReactNode;
 }
 
@@ -59,7 +60,7 @@ const NAV: Array<{ href: string; label: string; icon: React.ComponentType<{ clas
   { href: "/settings", label: "Settings", icon: Settings, permission: "organization:read" },
 ];
 
-export function AppShell({ ctx, user, organizations, plan, children }: ShellProps) {
+export function AppShell({ ctx, user, organizations, plan, readOnly, children }: ShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -86,6 +87,21 @@ export function AppShell({ ctx, user, organizations, plan, children }: ShellProp
           <ThemeToggle />
           <UserMenu user={user} />
         </header>
+        {readOnly && (
+          <div role="status" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b bg-primary/8 px-4 py-2 text-center text-sm">
+            <span>
+              <span className="font-medium">Shared demo workspace</span>
+              <span className="text-muted-foreground"> · read-only, reset nightly. Your own organization unlocks every feature.</span>
+            </span>
+            <CreateOrganizationDialog
+              trigger={
+                <Button size="sm" variant="outline" className="h-7">
+                  <Plus /> Create organization
+                </Button>
+              }
+            />
+          </div>
+        )}
         <main className="flex-1 px-4 py-6 sm:py-8 lg:px-8">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>

@@ -10,11 +10,12 @@ import {
   updateOrganizationSchema,
 } from "@/domain/validation";
 import { audit } from "../audit";
-import { type Actor, authorize, type OrgContext } from "../context";
+import { type Actor, assertWritable, authorize, type OrgContext } from "../context";
 import { generateToken } from "../crypto";
 import type { Dependencies } from "../ports";
 
 type Deps = Pick<Dependencies, "organizations" | "auditLogs" | "logger">;
+type WriteDeps = Deps & Pick<Dependencies, "config">;
 
 async function availableSlug(deps: Deps, base: string): Promise<string> {
   const root = base.length >= 3 && !isReservedSlug(base) ? base : `${base || "org"}-team`;
@@ -46,12 +47,13 @@ export async function createOrganization(deps: Deps, actor: Actor, input: unknow
   return organization;
 }
 
-export function listOrganizations(deps: Pick<Dependencies, "organizations">, actor: Actor): Promise<Array<Organization & { role: Role }>> {
+export async function listOrganizations(deps: Pick<Dependencies, "organizations">, actor: Actor): Promise<Array<Organization & { role: Role }>> {
   return deps.organizations.listForUser(actor.userId);
 }
 
-export async function updateOrganization(deps: Deps, ctx: OrgContext, input: unknown): Promise<Organization> {
+export async function updateOrganization(deps: WriteDeps, ctx: OrgContext, input: unknown): Promise<Organization> {
   authorize(ctx, "organization:update");
+  assertWritable(deps, ctx);
   const data = parseInput(updateOrganizationSchema, input);
   const current = ctx.organization;
 
@@ -72,11 +74,12 @@ export async function updateOrganization(deps: Deps, ctx: OrgContext, input: unk
 }
 
 export async function deleteOrganization(
-  deps: Pick<Dependencies, "organizations" | "subscriptions" | "billing" | "logger">,
+  deps: Pick<Dependencies, "organizations" | "subscriptions" | "billing" | "logger" | "config">,
   ctx: OrgContext,
   input: unknown,
 ): Promise<void> {
   authorize(ctx, "organization:delete");
+  assertWritable(deps, ctx);
   const { confirmation } = parseInput(deleteOrganizationSchema, input);
   if (confirmation !== ctx.organization.slug) {
     throw new ValidationError("Confirmation doesn't match.", { confirmation: [`Type "${ctx.organization.slug}" to confirm.`] });

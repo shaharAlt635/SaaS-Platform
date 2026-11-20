@@ -58,8 +58,9 @@ export default async function BillingPage({
           <Alert title="Thanks for subscribing!">Your plan will update as soon as payment is confirmed — usually within a few seconds.</Alert>
         )}
         {!billing.enabled && (
-          <Alert variant="warning" title="Billing isn't configured">
-            Set <code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code> and the price IDs to enable upgrades.
+          <Alert title="Payments aren't connected in this environment">
+            Plans and limits work as shown. Set <code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code> and the price IDs to enable
+            Stripe Checkout and the customer portal.
           </Alert>
         )}
         {subscription?.status === "PAST_DUE" && (
