@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# prisma
+src/generated/
+
+# env
+.env
+.env*.local
+!.env.example
+
+# misc
+.DS_Store
+coverage/
+npm-debug.log*
+.vercel
